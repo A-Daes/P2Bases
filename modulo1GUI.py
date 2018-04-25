@@ -1,5 +1,6 @@
 from Tkinter import *
 from functools import partial
+import insertar_cliente
 
 
 ''' 

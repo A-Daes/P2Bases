@@ -1,11 +1,11 @@
- import psycopg2
+import psycopg2
 from config import config
  
  
-def insert_vendor(vendor_name):
+def insert_vendor([args]):
     """ insert a new vendor into the vendors table """
-    sql = """INSERT INTO vendors(vendor_name)
-             VALUES(%s) RETURNING vendor_id;"""
+    sql = """INSERT INTO cliente
+             VALUES([args])"""
     conn = None
     vendor_id = None
     try:
@@ -16,7 +16,7 @@ def insert_vendor(vendor_name):
         # create a new cursor
         cur = conn.cursor()
         # execute the INSERT statement
-        cur.execute(sql, (vendor_name,))
+        cur.execute(sql, ([args]))
         # get the generated id back
         vendor_id = cur.fetchone()[0]
         # commit the changes to the database
