@@ -1,11 +1,12 @@
 from Tkinter import *
 from functools import partial
-import insertar_cliente
+##import insertar_cliente
 
 
 ''' 
 TO-DO: 
 Full focus de ventanas, ie no dejar que me ponga en otra ventana mientras estoy editando algo
+Faltan todo lo interno. Tengo que leer mas de psycopg, para poder hacerlas NECESITO hacer las tablas.
 '''
 
 '''
@@ -110,16 +111,93 @@ def cCrear():
 	ccCreateWindow = Toplevel()
 	ccCreateWindow.title("Crear cliente")
 
+
+
 	##Funciones internas
+
+	def ccAgregar():
+		##insert_cliente([args])
+
+		pass
+
+	def ccCerrar():
+		ccCreateWindow.destroy()
+
+
+	##Frames
+
+	ccInputFrame = Frame(ccCreateWindow)
+	ccBotonesFrame = Frame(ccCreateWindow)
+
+	##Labels
+
+	ccInfoLabel = Label(ccInputFrame, text = "Datos")
+	ccNombreLabel = Label(ccInputFrame, text = "Nombre:")
+	ccApellidoLabel = Label(ccInputFrame, text = "Apellido:")
+	ccTelLabel = Label(ccInputFrame, text="Telefono:")
+	ccAddressLabel = Label(ccInputFrame, text="Direccion:")
+
+	##TextEntry
+
+	ccEntryNombre = Entry(ccInputFrame)
+	ccEntryApellido = Entry(ccInputFrame, text = "Apellido")
+	ccEntryTel = Entry(ccInputFrame, text = "Telefono")
+	ccEntryAddress = Entry(ccInputFrame, text = "Direccion")
+
+	##Botones
+
+	ccBotonAgregar = Button(ccBotonesFrame, text = "Agregar", command=ccAgregar)
+	ccBotonCerrar = Button(ccBotonesFrame, text = "Cerrar", command=ccCerrar)
+
+	##Packing
+
+	ccInfoLabel.pack(side=TOP)
+	ccNombreLabel.pack(side=LEFT)
+	ccEntryNombre.pack(side=LEFT)
+	ccApellidoLabel.pack(side=LEFT)
+	ccEntryApellido.pack(side=LEFT)
+	ccTelLabel.pack(side=LEFT)
+	ccEntryTel.pack(side=LEFT)
+	ccAddressLabel.pack(side=LEFT)
+	ccEntryAddress.pack(side=LEFT)
+	ccBotonAgregar.pack(side=RIGHT)
+	ccBotonCerrar.pack(side=RIGHT)
+
+
+	ccInputFrame.pack(side=TOP)
+	ccBotonesFrame.pack(side=BOTTOM)
 
 	
 def cActualizar():
 	#Abrir ventana para actualizar cliente
+
+
+	###COPIAR cCrear, agregar listbox de clientes y cambiar 'agregar' por 'editar'
 	pass
 
 def cEliminar():
 	#Verificar si se quiere eliminar a cliente en cMenuEliminar
-	pass
+	ceAlertWindow = Toplevel()
+	ceAlertWindow.title("Eliminar?")
+
+	
+	def ceDelete():
+		pass 
+		##delete_client
+
+	##Labels
+	ceEliminarLabel = Label(ceAlertWindow, text="Seguro que desea eliminar a []?")
+
+	ceBotonSi = Button(ceAlertWindow, text="Si")
+	ceBotonNo = Button(ceAlertWindow, text="No")
+
+	ceEliminarLabel.pack(side=TOP)
+
+	ceBotonSi.pack(side=BOTTOM)
+	ceBotonNo.pack(side=BOTTOM)
+	
+
+
 
 def aAgregar():
 	#Agregar a la base de datos el campo segun los datos en aTextNombre, aMenuTipo y mostrar una ventana para pedir restricciones
