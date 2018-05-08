@@ -2,10 +2,9 @@ import psycopg2
 from config import config
  
  
-def insert_vendor([args]):
+def insert_vendor(datos):
     """ insert a new vendor into the vendors table """
-    sql = """INSERT INTO cliente
-             VALUES([args])"""
+    sql = "INSERT INTO cliente VALUES(" + datos[0] + ", " + datos[1] +", " + datos[2] + "," + datos[3] + ", " + datos[4]+ ", " + datos[5]+ ", " + datos[6]")"
     conn = None
     vendor_id = None
     try:

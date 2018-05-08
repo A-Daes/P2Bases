@@ -1,13 +1,2 @@
-
-
-#ID || Nombre || Apellido || Telefono || Direccion || Categoria || Correo || Sucursal || 
-
- -  ||                                             ||    -      ||        ||    -     ||
-
-
-
-Categoria
-
-Sucursal
-
-
+Embotelladora:
+Tiene Cliente, Empleado, proveedor, ventas, compras
