@@ -113,6 +113,7 @@ def cCrear():
 
 
 
+
 	##Funciones internas
 
 	def ccAgregar():
@@ -122,6 +123,14 @@ def cCrear():
 
 	def ccCerrar():
 		ccCreateWindow.destroy()
+
+	def ccEmptyCallback(event):
+		if (ccEntryDate.get() == "DD/MM/YYYY"):
+			ccEntryDate.delete(0, "end")
+			ccFirstTime = False
+			return None
+		else:
+			return None
 
 
 	##Frames
@@ -136,6 +145,9 @@ def cCrear():
 	ccApellidoLabel = Label(ccInputFrame, text = "Apellido:")
 	ccTelLabel = Label(ccInputFrame, text="Telefono:")
 	ccAddressLabel = Label(ccInputFrame, text="Direccion:")
+	ccMailLabel = Label(ccInputFrame, text="Correo:")
+	ccBirthLabel = Label(ccInputFrame, text = "Fecha de Nacimiento: ")
+
 
 	##TextEntry
 
@@ -143,6 +155,11 @@ def cCrear():
 	ccEntryApellido = Entry(ccInputFrame, text = "Apellido")
 	ccEntryTel = Entry(ccInputFrame, text = "Telefono")
 	ccEntryAddress = Entry(ccInputFrame, text = "Direccion")
+	ccEntryMail = Entry(ccInputFrame)
+	ccEntryDate = Entry(ccInputFrame)
+	ccEntryDate.bind("<Button-1>", ccEmptyCallback)
+	ccEntryDate.insert(0, "DD/MM/YYYY")
+
 
 	##Botones
 
@@ -160,6 +177,10 @@ def cCrear():
 	ccEntryTel.pack(side=LEFT)
 	ccAddressLabel.pack(side=LEFT)
 	ccEntryAddress.pack(side=LEFT)
+	ccMailLabel.pack(side=LEFT)
+	ccEntryMail.pack(side=LEFT)
+	ccBirthLabel.pack(side=LEFT)
+	ccEntryDate.pack(side=LEFT)
 	ccBotonAgregar.pack(side=RIGHT)
 	ccBotonCerrar.pack(side=RIGHT)
 
