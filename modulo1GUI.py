@@ -1,4 +1,5 @@
 from Tkinter import *
+from tkFileDialog import askopenfilename
 from functools import partial
 ##import insertar_cliente
 
@@ -110,6 +111,7 @@ def cCrear():
 	##TopLevel
 	ccCreateWindow = Toplevel()
 	ccCreateWindow.title("Crear cliente")
+	photoFileName = ""
 
 
 
@@ -117,9 +119,20 @@ def cCrear():
 	##Funciones internas
 
 	def ccAgregar():
-		##insert_cliente([args])
+		sendData = []
+		sendData.append(ccEntryNombre.get())
+		sendData.append(ccEntryApellido.get())
+		sendData.append(ccEntryTel.get())
+		sendData.append(ccEntryAddress.get())
+		sendData.append(ccEntryMail.get())
+		sendData.append(ccEntryDate.get())
+		sendData.append(ccEntryNation.get())
+		sendData.append(ccEntryAddress.get())
+		sendData.append(ccHiddenPhotoEntry.get())
 
-		pass
+		print sendData
+
+
 
 	def ccCerrar():
 		ccCreateWindow.destroy()
@@ -132,10 +145,22 @@ def cCrear():
 		else:
 			return None
 
+	def ccChoosePhoto():
+		filename = askopenfilename()
+		if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+			photoFileName = filename
+			ccHiddenPhotoEntry.insert(0, photoFileName)
+			print photoFileName
+		else:
+			##ErrorPopup
+			print "lol"
+
+
 
 	##Frames
 
 	ccInputFrame = Frame(ccCreateWindow)
+	ccInputFrameLower = Frame(ccCreateWindow)
 	ccBotonesFrame = Frame(ccCreateWindow)
 
 	##Labels
@@ -146,8 +171,10 @@ def cCrear():
 	ccTelLabel = Label(ccInputFrame, text="Telefono:")
 	ccAddressLabel = Label(ccInputFrame, text="Direccion:")
 	ccMailLabel = Label(ccInputFrame, text="Correo:")
-	ccBirthLabel = Label(ccInputFrame, text = "Fecha de Nacimiento: ")
-
+	ccBirthLabel = Label(ccInputFrameLower, text = "Fecha de Nacimiento: ")
+	ccNationLabel = Label(ccInputFrameLower, text = "Nacionalidad:")
+	ccEmpresaLabel = Label(ccInputFrameLower, text = "Empresa:")
+	ccFotoLabel = Label(ccInputFrameLower, text = "Foto:")
 
 	##TextEntry
 
@@ -156,13 +183,17 @@ def cCrear():
 	ccEntryTel = Entry(ccInputFrame, text = "Telefono")
 	ccEntryAddress = Entry(ccInputFrame, text = "Direccion")
 	ccEntryMail = Entry(ccInputFrame)
-	ccEntryDate = Entry(ccInputFrame)
+	ccEntryDate = Entry(ccInputFrameLower)
 	ccEntryDate.bind("<Button-1>", ccEmptyCallback)
 	ccEntryDate.insert(0, "DD/MM/YYYY")
+	ccEntryNation = Entry(ccInputFrameLower)
+	ccEntryEmpresa = Entry(ccInputFrameLower)
+	ccHiddenPhotoEntry = Entry(ccInputFrameLower)
 
 
 	##Botones
 
+	ccBotonFoto = Button(ccInputFrameLower, text ="Elegir foto...", command = ccChoosePhoto)
 	ccBotonAgregar = Button(ccBotonesFrame, text = "Agregar", command=ccAgregar)
 	ccBotonCerrar = Button(ccBotonesFrame, text = "Cerrar", command=ccCerrar)
 
@@ -181,11 +212,18 @@ def cCrear():
 	ccEntryMail.pack(side=LEFT)
 	ccBirthLabel.pack(side=LEFT)
 	ccEntryDate.pack(side=LEFT)
+	ccNationLabel.pack(side=LEFT)
+	ccEntryNation.pack(side=LEFT)
+	ccEmpresaLabel.pack(side=LEFT)
+	ccEntryEmpresa.pack(side=LEFT)
+	ccFotoLabel.pack(side=LEFT)
+	ccBotonFoto.pack(side=LEFT)
 	ccBotonAgregar.pack(side=RIGHT)
 	ccBotonCerrar.pack(side=RIGHT)
 
 
 	ccInputFrame.pack(side=TOP)
+	ccInputFrameLower.pack(side=TOP)
 	ccBotonesFrame.pack(side=BOTTOM)
 
 	
