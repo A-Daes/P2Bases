@@ -25,3 +25,5 @@ Dependencies:
 
 -tkinter
 -psycopg2
+-pymongo
+-tweepy

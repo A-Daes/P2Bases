@@ -1,12 +1,67 @@
+
+from __future__ import print_function
 from Tkinter import *
 from tkFileDialog import askopenfilename
 from functools import partial
 import insertar_cliente
 import get_client
 import get_data
+import re
+from pprint import pprint
+import tweepy
+import json
+from pymongo import *
+
+
+##CLASSES
+MONGO_HOST = "mongodb+srv://aegistk14104:aegistk14104@cc3040alv14104-dawge.mongodb.net/test?retryWrites=true"
+
+WORDS = ["#Celebridade"]
+
+class StreamListener(tweepy.StreamListener):    
+    #This is a class provided by tweepy to access the Twitter Streaming API. 
+
+    def on_connect(self):
+        # Called initially to connect to the Streaming API
+        print("You are now connected to the streaming API.")
+ 
+    def on_error(self, status_code):
+        # On error - if an error occurs, display the error / status code
+        print('An Error has occured: ' + repr(status_code))
+        return False
+ 
+    def on_data(self, data):
+        #This is the meat of the script...it connects to your mongoDB and stores the tweet
+        try:
+            client = MongoClient(MONGO_HOST)
+            
+            # Use twitterdb database. If it doesn't exist, it will be created.
+            db = client.twitterdb
+    
+            # Decode the JSON from Twitter
+            datajson = json.loads(data)
+            
+            #grab the 'created_at' data from the Tweet to use for display
+            created_at = datajson['created_at']
+
+            #print out a message to the screen that we have collected a tweet
+            print("Tweet collected at " + str(created_at))
+            
+            #insert the data into the mongoDB into a collection called twitter_search
+            #if twitter_search doesn't exist, it will be created.
+            db.twitter_search.insert(datajson)
+        except Exception as e:
+           print(e)
+
+
+
+#Set up the listener. The 'wait_on_rate_limit=True' is needed to help with Twitter API rate limiting.
+
 
 filterList = []
 lastTable = ["cliente"]
+clientesIdList = get_data.get_data(""" SELECT "ID" FROM public."Cliente" ORDER BY "ID" ASC """)
+
 ''' 
 TO-DO: 
 Full focus de ventanas, ie no dejar que me ponga en otra ventana mientras estoy editando algo
@@ -23,8 +78,12 @@ Functions related to actual inner workings are imported from their respective li
 #Abrir ventana para elegir filtros y mostrar filas
 
 def fShow():
-	sql = filterList[0]
+	if len(filterList) ==0:
+		sql = """SELECT * FROM public."Cliente" ORDER BY "ID" ASC """
+	else:
+		sql = filterList[0]
 	dListboxRows.delete(0, END)
+	data = get_data.get_data(sql)
 	for item in get_data.get_data(sql):
 		dListboxRows.insert(END, item)
 
@@ -36,9 +95,12 @@ def fSelect():
 
 	##Funciones internas
 	def fsApply():
-		filtro = "SELECT * FROM  " + lastTable[len(lastTable) - 1] + " WHERE " + fsVariableCampo1.get() + " " + fsVariableCond1.get() + " " + fsEntryCondicion.get()
+		filtro = """SELECT nombre, apellido, telefono, direccion, correo, "fecha de nacimiento", nacionalidad, empresa, "codigo foto", "ID"
+	FROM public."Cliente"
+	WHERE {0} {1} {2} """.format(fsVariableCampo1.get(), fsVariableCond1.get(), fsEntryCondicion.get())
+
 		filterList.append(filtro)
-		print filterList
+		print (filterList)
 
 		if len(filterList) > 0:
 			fBotonEliminar.configure(state = NORMAL)
@@ -148,10 +210,12 @@ def cCrear():
 		sendData.append(ccEntryAddress.get())
 		sendData.append(ccHiddenPhotoEntry.get())
 
-		print sendData
 
-		dataString = "INSERT INTO Cliente VALUES('" + sendData[0] + "','" + sendData[1] + "'," + sendData[2] + ",'" + sendData[3] + "','" + sendData[4] + "'," + sendData[5] + ",'" + sendData[6] + ",'" + sendData[7] + "'," + sendData[8] + ")"
+		dataString = """INSERT INTO public."Cliente"(
+	nombre, apellido, telefono, direccion, correo, "fecha de nacimiento", nacionalidad, empresa, "codigo foto")
+	VALUES ('{}', '{}', {}, '{}', '{}', '{}', '{}', '{}', '{}');""".format(sendData[0], sendData[1],sendData[2], sendData[3],sendData[4], sendData[5],sendData[6], sendData[7],sendData[8])
 
+		print (dataString)
 		insertar_cliente.insert_client(dataString)
 
 
@@ -171,10 +235,10 @@ def cCrear():
 		if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
 			photoFileName = filename
 			ccHiddenPhotoEntry.insert(0, photoFileName)
-			print photoFileName
+			print (photoFileName)
 		else:
 			##ErrorPopup
-			print "lol"
+			print ("lol")
 
 
 
@@ -252,7 +316,9 @@ def cActualizar():
 #Abrir ventana para crear nuevo cliente
 	##TopLevel
 
-	clientData = ["DefaultID", "Default", "Last", "num", "Address", "Mail", "1/1/1", "Default", "Default", "C:"]
+	clienteid = cVariable.get()
+	clienteid = re.sub("\D", "", clienteid)
+	clientData = get_client.get_client(clienteid)
 	caCreateWindow = Toplevel()
 	caCreateWindow.title("Actualizar cliente")
 	photoFileName = ""
@@ -274,128 +340,132 @@ def cActualizar():
 		sendData.append(caEntryAddress.get())
 		sendData.append(caHiddenPhotoEntry.get())
 
-		print sendData
 
-		dataString = "INSERT INTO Cliente VALUES('" + sendData[0] + "','" + sendData[1] + "'," + sendData[2] + ",'" + sendData[3] + "','" + sendData[4] + "'," + sendData[5] + ",'" + sendData[6] + ",'" + sendData[7] + "'," + sendData[8] + ")"
-
+		dataString = """UPDATE public."Cliente"
+	SET nombre='{}', apellido='{}', telefono={}, direccion='{}', correo='{}', "fecha de nacimiento"='{}', nacionalidad='{}', empresa='{}', "codigo foto"='{}'
+	WHERE "ID" = {}; """.format(sendData[0], sendData[1],sendData[2], sendData[3],sendData[4], sendData[5],sendData[6], sendData[7],sendData[8], clienteid)
 		insertar_cliente.insert_client(dataString)
 
 
 	def caCerrar():
-		ccCreateWindow.destroy()
+		caCreateWindow.destroy()
 
 	def caChoosePhoto():
 		filename = askopenfilename()
 		if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
 			photoFileName = filename
 			caHiddenPhotoEntry.insert(0, photoFileName)
-			print photoFileName
 		else:
 			##ErrorPopup
-			print "lol"
-
+			pass
 
 
 	##Frames
+		caInputFrame = Frame(caCreateWindow)
+		caInputFrameLower = Frame(caCreateWindow)
+		caBotonesFrame = Frame(caCreateWindow)
 
-	caInputFrame = Frame(caCreateWindow)
-	caInputFrameLower = Frame(caCreateWindow)
-	caBotonesFrame = Frame(caCreateWindow)
+		##Labels
 
-	##Labels
+		caInfoLabel = Label(caInputFrame, text = "Datos")
+		caNombreLabel = Label(caInputFrame, text = "Nombre:")
+		caApellidoLabel = Label(caInputFrame, text = "Apellido:")
+		caTelLabel = Label(caInputFrame, text="Telefono:")
+		caAddressLabel = Label(caInputFrame, text="Direcaion:")
+		caMailLabel = Label(caInputFrame, text="Correo:")
+		caBirthLabel = Label(caInputFrameLower, text = "Fecha de Nacimiento: ")
+		caNationLabel = Label(caInputFrameLower, text = "Nacionalidad:")
+		caEmpresaLabel = Label(caInputFrameLower, text = "Empresa:")
+		caFotoLabel = Label(caInputFrameLower, text = "Foto:")
 
-	caInfoLabel = Label(caInputFrame, text = "Datos")
-	caNombreLabel = Label(caInputFrame, text = "Nombre:")
-	caApellidoLabel = Label(caInputFrame, text = "Apellido:")
-	caTelLabel = Label(caInputFrame, text="Telefono:")
-	caAddressLabel = Label(caInputFrame, text="Direcaion:")
-	caMailLabel = Label(caInputFrame, text="Correo:")
-	caBirthLabel = Label(caInputFrameLower, text = "Fecha de Nacimiento: ")
-	caNationLabel = Label(caInputFrameLower, text = "Nacionalidad:")
-	caEmpresaLabel = Label(caInputFrameLower, text = "Empresa:")
-	caFotoLabel = Label(caInputFrameLower, text = "Foto:")
+		##TextEntry
 
-	##TextEntry
+		caEntryNombre = Entry(caInputFrame)
+		caEntryNombre.insert(0, clientData[0])
+		
+		caEntryApellido = Entry(caInputFrame)
+		caEntryApellido.insert(0, clientData[1])	
+		
+		caEntryTel = Entry(caInputFrame, text = "Telefono")
+		caEntryTel.insert(0, clientData[2])	
+		
+		caEntryAddress = Entry(caInputFrame, text = "Direccion")
+		caEntryAddress.insert(0, clientData[3])	
 
-	caEntryNombre = Entry(caInputFrame)
-	caEntryNombre.insert(0, clientData[1])
-	
-	caEntryApellido = Entry(caInputFrame)
-	caEntryApellido.insert(0, clientData[2])	
-	
-	caEntryTel = Entry(caInputFrame, text = "Telefono")
-	caEntryTel.insert(0, clientData[3])	
-	
-	caEntryAddress = Entry(caInputFrame, text = "Direccion")
-	caEntryAddress.insert(0, clientData[4])	
+		caEntryMail = Entry(caInputFrame)
+		caEntryMail.insert(0, clientData[4])	
 
-	caEntryMail = Entry(caInputFrame)
-	caEntryMail.insert(0, clientData[5])	
+		caEntryDate = Entry(caInputFrameLower)
+		caEntryDate.insert(0, clientData[5])
 
-	caEntryDate = Entry(caInputFrameLower)
-	caEntryDate.insert(0, clientData[6])
-
-	caEntryNation = Entry(caInputFrameLower)
-	caEntryNation.insert(0, clientData[7])	
-	
-	caEntryEmpresa = Entry(caInputFrameLower)
-	caEntryEmpresa.insert(0, clientData[8])	
-	
-	caHiddenPhotoEntry = Entry(caInputFrameLower)
-	caHiddenPhotoEntry.insert(0, clientData[9])	
-
-
-	##Botones
-
-	caBotonFoto = Button(caInputFrameLower, text ="Elegir foto...", command = caChoosePhoto)
-	caBotonAgregar = Button(caBotonesFrame, text = "Actualizar", command=caActualizar)
-	caBotonCerrar = Button(caBotonesFrame, text = "Cerrar", command=caCerrar)
-
-	##Packing
-
-	caInfoLabel.pack(side=TOP)
-	caNombreLabel.pack(side=LEFT)
-	caEntryNombre.pack(side=LEFT)
-	caApellidoLabel.pack(side=LEFT)
-	caEntryApellido.pack(side=LEFT)
-	caTelLabel.pack(side=LEFT)
-	caEntryTel.pack(side=LEFT)
-	caAddressLabel.pack(side=LEFT)
-	caEntryAddress.pack(side=LEFT)
-	caMailLabel.pack(side=LEFT)
-	caEntryMail.pack(side=LEFT)
-	caBirthLabel.pack(side=LEFT)
-	caEntryDate.pack(side=LEFT)
-	caNationLabel.pack(side=LEFT)
-	caEntryNation.pack(side=LEFT)
-	caEmpresaLabel.pack(side=LEFT)
-	caEntryEmpresa.pack(side=LEFT)
-	caFotoLabel.pack(side=LEFT)
-	caBotonFoto.pack(side=LEFT)
-	caBotonAgregar.pack(side=RIGHT)
-	caBotonCerrar.pack(side=RIGHT)
+		caEntryNation = Entry(caInputFrameLower)
+		caEntryNation.insert(0, clientData[6])	
+		
+		caEntryEmpresa = Entry(caInputFrameLower)
+		caEntryEmpresa.insert(0, clientData[7])	
+		
+		caHiddenPhotoEntry = Entry(caInputFrameLower)
+		caHiddenPhotoEntry.insert(0, clientData[8])	
 
 
-	caInputFrame.pack(side=TOP)
-	caInputFrameLower.pack(side=TOP)
-	caBotonesFrame.pack(side=BOTTOM)
+		##Botones
+
+		caBotonFoto = Button(caInputFrameLower, text ="Elegir foto...", command = caChoosePhoto)
+		caBotonAgregar = Button(caBotonesFrame, text = "Actualizar", command=caActualizar)
+		caBotonCerrar = Button(caBotonesFrame, text = "Cerrar", command=caCerrar)
+
+		##Packing
+
+		caInfoLabel.pack(side=TOP)
+		caNombreLabel.pack(side=LEFT)
+		caEntryNombre.pack(side=LEFT)
+		caApellidoLabel.pack(side=LEFT)
+		caEntryApellido.pack(side=LEFT)
+		caTelLabel.pack(side=LEFT)
+		caEntryTel.pack(side=LEFT)
+		caAddressLabel.pack(side=LEFT)
+		caEntryAddress.pack(side=LEFT)
+		caMailLabel.pack(side=LEFT)
+		caEntryMail.pack(side=LEFT)
+		caBirthLabel.pack(side=LEFT)
+		caEntryDate.pack(side=LEFT)
+		caNationLabel.pack(side=LEFT)
+		caEntryNation.pack(side=LEFT)
+		caEmpresaLabel.pack(side=LEFT)
+		caEntryEmpresa.pack(side=LEFT)
+		caFotoLabel.pack(side=LEFT)
+		caBotonFoto.pack(side=LEFT)
+		caBotonAgregar.pack(side=RIGHT)
+		caBotonCerrar.pack(side=RIGHT)
+
+
+		caInputFrame.pack(side=TOP)
+		caInputFrameLower.pack(side=TOP)
+		caBotonesFrame.pack(side=BOTTOM)
 
 
 def cEliminar():
 	#Verificar si se quiere eliminar a cliente en cMenuEliminar
+	clienteid = cVariable.get()
+	clienteid = re.sub("\D", "", clienteid)
 	ceAlertWindow = Toplevel()
 	ceAlertWindow.title("Eliminar?")
 
 	
 	def ceDelete():
-		pass 
-		##delete_client
+		sql = """DELETE FROM public."Cliente"
+	WHERE public."Cliente"."ID" = {} """.format(clienteid)
+		insertar_cliente.insert_client(sql)
+		ceAlertWindow.destroy()
+
+	def ceDestroy():
+		ceAlertWindow.destroy()
 
 	##Labels
-	ceEliminarLabel = Label(ceAlertWindow, text="Seguro que desea eliminar a []?")
+	ceEliminarLabel = Label(ceAlertWindow, text="Seguro que desea eliminar a {}?".format(clienteid))
 
-	ceBotonSi = Button(ceAlertWindow, text="Si")
-	ceBotonNo = Button(ceAlertWindow, text="No")
+	ceBotonSi = Button(ceAlertWindow, text="Si", command=ceDelete)
+	ceBotonNo = Button(ceAlertWindow, text="No", command=ceDestroy)
 
 	ceEliminarLabel.pack(side=TOP)
 
@@ -406,6 +476,59 @@ def cEliminar():
 def aAgregar():
 	#Agregar a la base de datos el campo segun los datos en aTextNombre, aMenuTipo y mostrar una ventana para pedir restricciones
 	pass
+
+
+def tShowWindow():
+	tsShowWindow = Toplevel()
+	tsShowWindow.title("Ver Tweets")
+	tsShowWindow.geometry("600x400")
+
+	tsFilterFrame = Frame(tsShowWindow)
+
+	def getTweets():
+		MONGO_HOST = MongoClient("mongodb+srv://aegistk14104:aegistk14104@cc3040alv14104-dawge.mongodb.net/test?retryWrites=true")
+		db = MONGO_HOST.twitterdb
+		tweets = db.twitter_search
+		nameEntry = tsFilterNameEntry.get()
+		print (nameEntry)
+		tstextEntry = tsFilterTextEntry.get()
+		print (tstextEntry)
+		if ((nameEntry == "") and (tstextEntry == "")):
+			posts  = tweets.find()
+		elif (nameEntry != "") and (tstextEntry == ""):
+			posts = tweets.find({"user": {"name": "{}".format(nameEntry)}})
+		elif (nameEntry == "") and (tstextEntry != ""):
+			posts = tweets.find({"text":"/{}/".format(tstextEntry)})
+		else:
+			posts = tweets.find({"user": {"name": "{}".format(nameEntry)}, "text":"/{}/".format(tstextEntry)})
+
+
+		tsListboxRows.delete(0, END)
+		for post in posts:
+			parsedString = post["text"] + ": " + post["user"]["name"]
+			tsListboxRows.insert(END, parsedString)
+
+
+
+	tsGetButton = Button(tsFilterFrame, text ="Armar lista", command=getTweets)
+	tsFilterNameLabel = Label(tsFilterFrame, text="Por nombre:")
+	tsFilterNameEntry = Entry(tsFilterFrame)
+	tsFilterTextLabel = Label(tsFilterFrame, text="Por Texto:")
+	tsFilterTextEntry = Entry(tsFilterFrame)
+
+	tsScrollbar = Scrollbar(tsShowWindow, orient=VERTICAL)
+	tsListboxRows = Listbox(tsShowWindow, yscrollcommand=tsScrollbar.set)
+	tsScrollbar.configure(command=tsListboxRows.yview)
+
+	tsGetButton.pack(side=RIGHT)
+	tsFilterNameLabel.pack(side=LEFT)
+	tsFilterNameEntry.pack(side=LEFT)
+	tsFilterTextLabel.pack(side=LEFT)
+	tsFilterTextEntry.pack(side=LEFT)
+	tsScrollbar.pack(side=RIGHT, fill=Y)
+	tsListboxRows.pack(side=BOTTOM, fill=BOTH, expand=1)
+
+	tsFilterFrame.pack(side=TOP)
 
 
 '''
@@ -436,6 +559,7 @@ FiltrosBFrame = Frame(Modulo1Frame)
 ClientesFrame = Frame(Modulo1Frame)
 CamposFrame = Frame(Modulo1Frame)
 DisplayFrame = Frame(Modulo1Frame)
+TwitterFrame = Frame(root)
 
 
 '''
@@ -468,17 +592,19 @@ cBotonEliminar = Button(ClientesFrame, text="Eliminar cliente", command = cElimi
 
 aBotonAgregar = Button(CamposFrame, text="Agregar Nuevo campo", command = aAgregar)
 
+tBotonModuloTwitter = Button(TwitterFrame, text="Ver tweets", command = tShowWindow)
+
 ### VARIABLES
 
 cVariable = StringVar(ClientesFrame)
-cVariable.set("ID0") # default value
+cVariable.set(clientesIdList[0]) # default value
 
 aVariableTipo = StringVar(CamposFrame)
 aVariableTipo.set("int") # default value
 
 ### OPTIONMENUS
 
-cMenuEliminaroActualizar = OptionMenu(ClientesFrame, cVariable, "ID0", "ID1", "ID2")
+cMenuEliminaroActualizar = OptionMenu(ClientesFrame, cVariable, *clientesIdList)
 aMenuTipo = OptionMenu(CamposFrame, aVariableTipo, "int", "date", "string", "char", "...")
 
 ### LISTBOXES
@@ -516,6 +642,8 @@ dLabel.pack(side=TOP)
 dListboxRows.pack(side=LEFT, fill=BOTH, expand=1)
 dScrollbar.pack(side=RIGHT, fill=Y)
 
+tBotonModuloTwitter.pack(side=LEFT)
+
 
 ##FRAMES
 
@@ -524,7 +652,7 @@ FiltrosBFrame.pack(side=TOP,fill=X)
 ClientesFrame.pack(side=TOP, fill=X)
 CamposFrame.pack(fill=X)
 DisplayFrame.pack(side=BOTTOM,fill=BOTH, expand=1)
-
+TwitterFrame.pack(side=BOTTOM)
 
 ###MAINLOOP
 root.mainloop()

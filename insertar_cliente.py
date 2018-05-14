@@ -7,7 +7,6 @@ def insert_client(datos):
     sql = datos
     conn = None
     vendor_id = None
-    print (sql)
     try:
         # read database configuration
         params = config()
@@ -16,9 +15,7 @@ def insert_client(datos):
         # create a new cursor
         cur = conn.cursor()
         # execute the INSERT statement
-        cur.execute(sql, ([args]))
-        # get the generated id back
-        vendor_id = cur.fetchone()[0]
+        cur.execute(sql)
         # commit the changes to the database
         conn.commit()
         # close communication with the database
