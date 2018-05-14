@@ -2,12 +2,11 @@ import psycopg2
 from config import config
  
  
-def insert_client(datos):
+def get_client(sql):
     """ insert a new vendor into the vendors table """
-    sql = datos
+    sql = sql
     conn = None
     vendor_id = None
-    print (sql)
     try:
         # read database configuration
         params = config()
@@ -17,8 +16,8 @@ def insert_client(datos):
         cur = conn.cursor()
         # execute the INSERT statement
         cur.execute(sql, ([args]))
-        # get the generated id back
-        vendor_id = cur.fetchone()[0]
+        ##Get all data to a list
+        client = cur.fetchone()
         # commit the changes to the database
         conn.commit()
         # close communication with the database
@@ -29,4 +28,4 @@ def insert_client(datos):
         if conn is not None:
             conn.close()
  
-    return vendor_id
+    return client

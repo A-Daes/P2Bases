@@ -1,9 +1,12 @@
 from Tkinter import *
 from tkFileDialog import askopenfilename
 from functools import partial
-##import insertar_cliente
+import insertar_cliente
+import get_client
+import get_data
 
-
+filterList = []
+lastTable = ["cliente"]
 ''' 
 TO-DO: 
 Full focus de ventanas, ie no dejar que me ponga en otra ventana mientras estoy editando algo
@@ -20,8 +23,10 @@ Functions related to actual inner workings are imported from their respective li
 #Abrir ventana para elegir filtros y mostrar filas
 
 def fShow():
-	#Muestra en dListboxRows las filas basadas en el filtro seleccionado
-	pass
+	sql = filterList[0]
+	dListboxRows.delete(0, END)
+	for item in get_data.get_data(sql):
+		dListboxRows.insert(END, item)
 
 
 def fSelect():
@@ -31,7 +36,14 @@ def fSelect():
 
 	##Funciones internas
 	def fsApply():
-		##Hacer filtro
+		filtro = "SELECT * FROM  " + lastTable[len(lastTable) - 1] + " WHERE " + fsVariableCampo1.get() + " " + fsVariableCond1.get() + " " + fsEntryCondicion.get()
+		filterList.append(filtro)
+		print filterList
+
+		if len(filterList) > 0:
+			fBotonEliminar.configure(state = NORMAL)
+		else:
+			fBotonEliminar.configure(state = DISABLED)
 		fsSelectWindow.destroy()
 
 	##Labels
@@ -43,15 +55,15 @@ def fSelect():
 	fsVariableCampo1.set("ID") # default value
 
 	fsVariableCond1 = StringVar(fsSelectWindow)
-	fsVariableCond1.set("Igual a:")
+	fsVariableCond1.set("=")
 
 	##Entry
 
 	fsEntryCondicion = Entry(fsSelectWindow)
 
 	##OptionMenus
-	fsMenuFilterCampo1 = OptionMenu(fsSelectWindow, fsVariableCampo1, "ID", "NOMBRE", "TELEFONO", "DIRECCION")
-	fsMenuFilterCond1 = OptionMenu(fsSelectWindow, fsVariableCond1, "Igual a:", "Menor a:", "Mayor a:", "Distinto a:", "Contiene: ")
+	fsMenuFilterCampo1 = OptionMenu(fsSelectWindow, fsVariableCampo1, "ID", "NOMBRE", "APELLIDO", "TELEFONO", "DIRECCION", "CORREO", "FECHA DE NACIMIENTO", "NACIONALIDAD", "EMPRESA")
+	fsMenuFilterCond1 = OptionMenu(fsSelectWindow, fsVariableCond1, "=", "<", ">", "NOT", "LIKE")
 
 	##Buttons
 
@@ -75,8 +87,12 @@ def fDelete():
 
 	##Funciones internas
 	def fdApply():
-		pass
-		#Eliminar filtro seleccionado
+		filterList.remove(fdVariableFilter.get())
+		if (len(filterList) == 0):
+			fBotonEliminar.configure(state=DISABLED)
+			fdDeleteWindow.destroy()
+		else:
+			pass
 
 	def fdClose():
 		fdDeleteWindow.destroy()
@@ -86,11 +102,11 @@ def fDelete():
 
 	##Variables
 	fdVariableFilter = StringVar(fdDeleteWindow)
-	fdVariableFilter.set("Filtro 1: ID > X") #Default value
+	fdVariableFilter.set(filterList[0]) #Default value
 
 	##OptionMenus
 
-	fdMenuFilter = OptionMenu(fdDeleteWindow, fdVariableFilter, "Filtro 1: ID > X", "Filtro 2: NUMERO CONTAINS A")
+	fdMenuFilter = OptionMenu(fdDeleteWindow, fdVariableFilter, *filterList)
 
 	##Buttons
 
@@ -119,6 +135,8 @@ def cCrear():
 	##Funciones internas
 
 	def ccAgregar():
+
+		##Add data to a default insert string
 		sendData = []
 		sendData.append(ccEntryNombre.get())
 		sendData.append(ccEntryApellido.get())
@@ -132,6 +150,9 @@ def cCrear():
 
 		print sendData
 
+		dataString = "INSERT INTO Cliente VALUES('" + sendData[0] + "','" + sendData[1] + "'," + sendData[2] + ",'" + sendData[3] + "','" + sendData[4] + "'," + sendData[5] + ",'" + sendData[6] + ",'" + sendData[7] + "'," + sendData[8] + ")"
+
+		insertar_cliente.insert_client(dataString)
 
 
 	def ccCerrar():
@@ -228,11 +249,137 @@ def cCrear():
 
 	
 def cActualizar():
-	#Abrir ventana para actualizar cliente
+#Abrir ventana para crear nuevo cliente
+	##TopLevel
+
+	clientData = ["DefaultID", "Default", "Last", "num", "Address", "Mail", "1/1/1", "Default", "Default", "C:"]
+	caCreateWindow = Toplevel()
+	caCreateWindow.title("Actualizar cliente")
+	photoFileName = ""
 
 
-	###COPIAR cCrear, agregar listbox de clientes y cambiar 'agregar' por 'editar'
-	pass
+	##Funciones internas
+
+	def caActualizar():
+
+		##Add data to a default insert string
+		sendData = []
+		sendData.append(caEntryNombre.get())
+		sendData.append(caEntryApellido.get())
+		sendData.append(caEntryTel.get())
+		sendData.append(caEntryAddress.get())
+		sendData.append(caEntryMail.get())
+		sendData.append(caEntryDate.get())
+		sendData.append(caEntryNation.get())
+		sendData.append(caEntryAddress.get())
+		sendData.append(caHiddenPhotoEntry.get())
+
+		print sendData
+
+		dataString = "INSERT INTO Cliente VALUES('" + sendData[0] + "','" + sendData[1] + "'," + sendData[2] + ",'" + sendData[3] + "','" + sendData[4] + "'," + sendData[5] + ",'" + sendData[6] + ",'" + sendData[7] + "'," + sendData[8] + ")"
+
+		insertar_cliente.insert_client(dataString)
+
+
+	def caCerrar():
+		ccCreateWindow.destroy()
+
+	def caChoosePhoto():
+		filename = askopenfilename()
+		if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+			photoFileName = filename
+			caHiddenPhotoEntry.insert(0, photoFileName)
+			print photoFileName
+		else:
+			##ErrorPopup
+			print "lol"
+
+
+
+	##Frames
+
+	caInputFrame = Frame(caCreateWindow)
+	caInputFrameLower = Frame(caCreateWindow)
+	caBotonesFrame = Frame(caCreateWindow)
+
+	##Labels
+
+	caInfoLabel = Label(caInputFrame, text = "Datos")
+	caNombreLabel = Label(caInputFrame, text = "Nombre:")
+	caApellidoLabel = Label(caInputFrame, text = "Apellido:")
+	caTelLabel = Label(caInputFrame, text="Telefono:")
+	caAddressLabel = Label(caInputFrame, text="Direcaion:")
+	caMailLabel = Label(caInputFrame, text="Correo:")
+	caBirthLabel = Label(caInputFrameLower, text = "Fecha de Nacimiento: ")
+	caNationLabel = Label(caInputFrameLower, text = "Nacionalidad:")
+	caEmpresaLabel = Label(caInputFrameLower, text = "Empresa:")
+	caFotoLabel = Label(caInputFrameLower, text = "Foto:")
+
+	##TextEntry
+
+	caEntryNombre = Entry(caInputFrame)
+	caEntryNombre.insert(0, clientData[1])
+	
+	caEntryApellido = Entry(caInputFrame)
+	caEntryApellido.insert(0, clientData[2])	
+	
+	caEntryTel = Entry(caInputFrame, text = "Telefono")
+	caEntryTel.insert(0, clientData[3])	
+	
+	caEntryAddress = Entry(caInputFrame, text = "Direccion")
+	caEntryAddress.insert(0, clientData[4])	
+
+	caEntryMail = Entry(caInputFrame)
+	caEntryMail.insert(0, clientData[5])	
+
+	caEntryDate = Entry(caInputFrameLower)
+	caEntryDate.insert(0, clientData[6])
+
+	caEntryNation = Entry(caInputFrameLower)
+	caEntryNation.insert(0, clientData[7])	
+	
+	caEntryEmpresa = Entry(caInputFrameLower)
+	caEntryEmpresa.insert(0, clientData[8])	
+	
+	caHiddenPhotoEntry = Entry(caInputFrameLower)
+	caHiddenPhotoEntry.insert(0, clientData[9])	
+
+
+	##Botones
+
+	caBotonFoto = Button(caInputFrameLower, text ="Elegir foto...", command = caChoosePhoto)
+	caBotonAgregar = Button(caBotonesFrame, text = "Actualizar", command=caActualizar)
+	caBotonCerrar = Button(caBotonesFrame, text = "Cerrar", command=caCerrar)
+
+	##Packing
+
+	caInfoLabel.pack(side=TOP)
+	caNombreLabel.pack(side=LEFT)
+	caEntryNombre.pack(side=LEFT)
+	caApellidoLabel.pack(side=LEFT)
+	caEntryApellido.pack(side=LEFT)
+	caTelLabel.pack(side=LEFT)
+	caEntryTel.pack(side=LEFT)
+	caAddressLabel.pack(side=LEFT)
+	caEntryAddress.pack(side=LEFT)
+	caMailLabel.pack(side=LEFT)
+	caEntryMail.pack(side=LEFT)
+	caBirthLabel.pack(side=LEFT)
+	caEntryDate.pack(side=LEFT)
+	caNationLabel.pack(side=LEFT)
+	caEntryNation.pack(side=LEFT)
+	caEmpresaLabel.pack(side=LEFT)
+	caEntryEmpresa.pack(side=LEFT)
+	caFotoLabel.pack(side=LEFT)
+	caBotonFoto.pack(side=LEFT)
+	caBotonAgregar.pack(side=RIGHT)
+	caBotonCerrar.pack(side=RIGHT)
+
+
+	caInputFrame.pack(side=TOP)
+	caInputFrameLower.pack(side=TOP)
+	caBotonesFrame.pack(side=BOTTOM)
+
 
 def cEliminar():
 	#Verificar si se quiere eliminar a cliente en cMenuEliminar
@@ -256,8 +403,6 @@ def cEliminar():
 	ceBotonNo.pack(side=BOTTOM)
 	
 
-
-
 def aAgregar():
 	#Agregar a la base de datos el campo segun los datos en aTextNombre, aMenuTipo y mostrar una ventana para pedir restricciones
 	pass
@@ -278,11 +423,11 @@ root.title("Aegis CRM")
 
 '''
 Modulo 1:
-- Mostrar filas con filtros [show: [Button: X, Function: ] , select filter: [newWindow: X, function: 1/2, delete: [Window: x, function: ]] ]
-- Crear cliente nuevo [Button: X, Window: , Function: ]
-- Actualizar datos cliente [Butoon: X, Window: , Function: ]
+- Mostrar filas con filtros [show:X [Button: X, Function: ] , select filter: [newWindow: X, function: X, delete: [Window: x, function:X ]] ]
+- Crear cliente nuevo [Button: X, Window:X , Function: X]
+- Actualizar datos cliente [Butoon: X, Window:X , Function: X]
 - Eliminar cliente (verificacion) [Button: X, AlertBox: , Function: ]
-- Creacion de campos adicionales (desde PostgreSQL y desde el programa en si) [Boton: X, RestrictionWindow: , Function: ]
+- Creacion de campos adicionales (desde PostgreSQL y desde el programa en si) [Boton: X, RestrictionWindow:X , Function:X ]
 '''
 
 Modulo1Frame = Frame(root)
@@ -333,7 +478,7 @@ aVariableTipo.set("int") # default value
 
 ### OPTIONMENUS
 
-cMenuEliminar = OptionMenu(ClientesFrame, cVariable, "ID0", "ID1", "ID2")
+cMenuEliminaroActualizar = OptionMenu(ClientesFrame, cVariable, "ID0", "ID1", "ID2")
 aMenuTipo = OptionMenu(CamposFrame, aVariableTipo, "int", "date", "string", "char", "...")
 
 ### LISTBOXES
@@ -349,12 +494,16 @@ fLabel.pack(side=TOP)
 fBotonShow.pack(side=LEFT)
 fBotonSelect.pack(side=RIGHT)
 fBotonEliminar.pack(side=RIGHT)
+if len(filterList) ==0:
+	fBotonEliminar.configure(state=DISABLED)
+else:
+	pass
 
 cLabel.pack(side=TOP)
 cBotonCrear.pack(side=LEFT)
-cBotonActualizar.pack(side=LEFT)
 cBotonEliminar.pack(side=RIGHT)
-cMenuEliminar.pack(side=RIGHT)
+cBotonActualizar.pack(side=RIGHT)
+cMenuEliminaroActualizar.pack(side=RIGHT)
 
 aLabel.pack(side=TOP)
 aBotonAgregar.pack(side=RIGHT)
